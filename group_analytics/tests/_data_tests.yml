@@ -2,7 +2,7 @@ version: 2
 data_tests:
 - name: assert_domain_count_in_range
   description: >-
-    domain_count is how many of banking, insurance and wealth hold the party (0-3; financials-only parties
-    are 0).
+    domain_count counts which of production, maintenance and quality hold a record for the row; it must
+    be between 1 and 3.
 - name: assert_public_models_not_empty
   description: 'Templated with a Jinja loop: fails for any public model in this project that is empty.'

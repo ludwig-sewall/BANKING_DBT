@@ -1,0 +1,11 @@
+inspection_site_id,plant_key,site_name,site_status,iso_certified_until,loaded_at
+QS-01,PL-01,Gothenburg Assembly QA,probation,2028-01-20,2026-03-31 06:00:00
+QS-02,PL-02,Malmö Castings QA,certified,2026-09-05,2026-03-31 06:00:00
+QS-03,PL-03,Tampere Components QA,certified,2027-10-23,2026-03-31 06:00:00
+QS-04,PL-04,Gdańsk Fabrication QA,probation,2026-11-27,2026-03-31 06:00:00
+QS-05,PL-05,Brno Machining QA,certified,2027-11-22,2026-03-31 06:00:00
+QS-06,PL-06,Linz Precision QA,certified,2027-10-25,2026-03-31 06:00:00
+QS-07,PL-07,Porto Plastics QA,probation,2027-03-01,2026-03-31 06:00:00
+QS-08,PL-08,Turin Drives QA,certified,2026-11-09,2026-03-31 06:00:00
+QS-09,PL-09,Lyon Electronics QA,certified,2027-02-14,2026-03-31 06:00:00
+QS-10,PL-10,Ghent Packaging QA,certified,2026-03-18,2026-03-31 06:00:00

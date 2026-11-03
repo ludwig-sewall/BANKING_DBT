@@ -1,6 +1,6 @@
 select
-  customer_id,
+  plant_id,
   domain_count
-from {{ ref('dim_customer_360') }}
-where domain_count < 0
+from {{ ref('dim_plant_360') }}
+where domain_count < 1
    or domain_count > 3

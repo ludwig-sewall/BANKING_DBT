@@ -1,0 +1,106 @@
+version: 2
+models:
+- name: stg_quality__inspection_sites
+  description: One QA site per plant. Renamed, typed and decoded; one row per source row.
+  columns:
+  - name: inspection_site_id
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_key
+    data_tests:
+    - unique
+    - not_null
+  - name: site_name
+  - name: site_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - certified
+          - probation
+          - suspended
+  - name: iso_certified_until
+  - name: loaded_at
+- name: stg_quality__inspections
+  description: >-
+    Sampled inspections; pending ones are from the last two days. Renamed, typed and decoded; one row
+    per source row.
+  columns:
+  - name: inspection_id
+    data_tests:
+    - unique
+    - not_null
+  - name: inspection_site_id
+    data_tests:
+    - not_null
+  - name: inspection_date
+  - name: product_line
+  - name: inspection_type
+  - name: inspection_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - passed
+          - failed
+          - pending
+  - name: sample_units
+  - name: defective_units
+    data_tests:
+    - platform.non_negative
+- name: stg_quality__defects
+  description: >-
+    Defects found during inspections, by code and severity. Renamed, typed and decoded; one row per source
+    row.
+  columns:
+  - name: defect_id
+    data_tests:
+    - unique
+    - not_null
+  - name: inspection_id
+    data_tests:
+    - not_null
+  - name: defect_code
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - dimension
+          - surface
+          - assembly
+          - contamination
+          - electrical
+  - name: severity
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - minor
+          - major
+          - critical
+  - name: defect_units
+- name: stg_quality__complaints
+  description: >-
+    Customer complaints traced back to a site. Renamed, typed and decoded; one row per source row.
+  columns:
+  - name: complaint_id
+    data_tests:
+    - unique
+    - not_null
+  - name: inspection_site_id
+    data_tests:
+    - not_null
+  - name: received_date
+  - name: product_line
+  - name: severity
+  - name: complaint_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - open
+          - closed
+  - name: credit_amount
+    data_tests:
+    - platform.non_negative

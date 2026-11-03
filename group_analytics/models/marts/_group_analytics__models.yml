@@ -1,9 +1,7 @@
 version: 2
 models:
-- name: dim_customer_360
-  description: >-
-    Public group customer 360. One row per party_key, built only from cross-project refs to banking, insurance,
-    wealth and financials. customer_id_hash uses platform.anonymize.
+- name: dim_plant_360
+  description: Public plant 360 across production, maintenance and quality.
   config:
     access: public
     contract:
@@ -14,11 +12,10 @@ models:
   data_tests:
   - dbt_expectations.expect_table_row_count_to_be_between:
       arguments:
-        min_value: 25
-        max_value: 40
+        min_value: 10
+        max_value: 10
   columns:
-  - name: customer_id
-    description: Group party key (P-…).
+  - name: plant_id
     data_type: varchar
     constraints:
     - type: not_null
@@ -27,117 +24,79 @@ models:
     - not_null
     - dbt_expectations.expect_column_values_to_match_regex:
         arguments:
-          regex: ^P-[0-9]{4}$
+          regex: ^PL-[0-9]{2}$
     entity:
       type: primary
-      name: customer
-  - name: customer_id_hash
-    description: Anonymized party key.
+      name: plant
+  - name: plant_name
     data_type: varchar
+  - name: country
+    data_type: varchar
+    dimension:
+      type: categorical
+  - name: production_status
+    data_type: varchar
+  - name: maintenance_status
+    data_type: varchar
+  - name: quality_status
+    data_type: varchar
+    dimension:
+      type: categorical
+  - name: units_produced
+    data_type: integer
     constraints:
     - type: not_null
+  - name: scrap_rate
+    data_type: numeric(18,4)
     data_tests:
-    - unique
-    - not_null
-  - name: banking_customer_id
-    data_type: varchar
-  - name: banking_status
-    data_type: varchar
-    dimension:
-      type: categorical
-  - name: customer_type
-    data_type: varchar
-    dimension:
-      type: categorical
-  - name: account_count
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: avg_oee
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: failure_count
     data_type: integer
     constraints:
     - type: not_null
-  - name: loan_count
+  - name: unplanned_downtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: maintenance_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: avg_first_pass_yield
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: avg_defects_ppm
+    data_type: integer
+  - name: complaint_count
     data_type: integer
     constraints:
     - type: not_null
-  - name: loan_balance
+  - name: complaint_credits
     data_type: numeric(18,2)
     constraints:
     - type: not_null
-  - name: loan_arrears
-    data_type: numeric(18,2)
+  - name: is_certificate_expired
+    data_type: boolean
     constraints:
     - type: not_null
-  - name: insurance_customer_id
-    data_type: varchar
-  - name: insurance_status
-    data_type: varchar
-    dimension:
-      type: categorical
-  - name: active_policy_count
-    data_type: integer
-    constraints:
-    - type: not_null
-  - name: annual_premium
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: open_claim_count
-    data_type: integer
-    constraints:
-    - type: not_null
-  - name: claims_paid
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: wealth_customer_id
-    data_type: varchar
-  - name: wealth_status
-    data_type: varchar
-    dimension:
-      type: categorical
-  - name: portfolio_count
-    data_type: integer
-    constraints:
-    - type: not_null
-  - name: assets_under_management
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: wealth_fees_12m
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: total_revenue
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: total_cost
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: total_profit
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: profit_months
-    data_type: integer
-    constraints:
-    - type: not_null
-  - name: profit_band
-    data_type: varchar
-    dimension:
-      type: categorical
   - name: domain_count
     data_type: integer
     constraints:
     - type: not_null
-  - name: has_churn
-    description: True when the party exited during the year (banking customer_exits).
-    data_type: boolean
-    constraints:
-    - type: not_null
-    data_tests:
-    - not_null
-  - name: churn_reason
-    data_type: varchar
   - name: as_of_date
     data_type: date
     constraints:
@@ -146,32 +105,32 @@ models:
     dimension:
       type: time
   metrics:
-  - name: customers
-    description: Parties on the customer 360.
-    label: Customers
+  - name: plants
+    description: Plants on the plant 360.
+    label: Plants
     type: simple
     agg: count
     expr: '1'
-  - name: total_revenue
-    description: Sum of total_revenue.
-    label: Total revenue
+  - name: units_produced
+    description: Sum of units_produced.
+    label: Units produced
     type: simple
     agg: sum
-    expr: total_revenue
-  - name: total_profit
-    description: Sum of total_profit.
-    label: Total profit
+    expr: units_produced
+  - name: maintenance_cost
+    description: Sum of maintenance_cost.
+    label: Maintenance cost
     type: simple
     agg: sum
-    expr: total_profit
-  - name: assets_under_management
-    description: Sum of assets under management.
-    label: AUM
+    expr: maintenance_cost
+  - name: complaint_credits
+    description: Sum of complaint_credits.
+    label: Complaint credits
     type: simple
     agg: sum
-    expr: assets_under_management
-- name: fct_customer_monthly
-  description: 'Public monthly activity per party: profit, banking flows, claims and wealth fees.'
+    expr: complaint_credits
+- name: fct_plant_monthly
+  description: Public monthly plant KPIs across the three systems.
   config:
     access: public
     contract:
@@ -180,7 +139,7 @@ models:
     enabled: true
   agg_time_dimension: activity_month
   columns:
-  - name: customer_month_id
+  - name: plant_month_id
     data_type: varchar
     constraints:
     - type: not_null
@@ -189,19 +148,19 @@ models:
     - not_null
     entity:
       type: primary
-      name: customer_month
-  - name: customer_id
+      name: plant_month
+  - name: plant_id
     data_type: varchar
     constraints:
     - type: not_null
     data_tests:
     - relationships:
         arguments:
-          to: ref('dim_customer_360')
-          field: customer_id
+          to: ref('dim_plant_360')
+          field: plant_id
     entity:
       type: foreign
-      name: customer
+      name: plant
   - name: activity_month
     data_type: date
     constraints:
@@ -209,69 +168,117 @@ models:
     granularity: month
     dimension:
       type: time
-  - name: revenue
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: cost
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: profit
-    data_type: numeric(18,2)
+  - name: units_produced
+    data_type: integer
     constraints:
     - type: not_null
     data_tests:
     - platform.sums_match:
-        description: Cross-project reconciliation with the financials project.
+        description: Cross-project reconciliation with the production project's run fact.
         arguments:
-          compare_model: ref('BANKING_FINANCIALS', 'fct_customer_profitability_monthly')
-          compare_column: profit
-  - name: banking_net_flow
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: banking_transactions
+          compare_model: ref('BANKING_PRODUCTION', 'fct_production_runs')
+          compare_column: units_produced
+  - name: scrap_units
     data_type: integer
     constraints:
     - type: not_null
-  - name: claims_reported
+  - name: oee
+    data_type: numeric(18,4)
+  - name: downtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: maintenance_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: first_pass_yield
+    data_type: numeric(18,4)
+  - name: complaint_count
     data_type: integer
-    constraints:
-    - type: not_null
-  - name: claims_paid
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: wealth_net_investment
-    data_type: numeric(18,2)
-    constraints:
-    - type: not_null
-  - name: wealth_fees
-    data_type: numeric(18,2)
     constraints:
     - type: not_null
   metrics:
-  - name: monthly_profit
-    description: Sum of profit by month.
-    label: Monthly profit
+  - name: monthly_units_produced
+    description: Sum of units_produced.
+    label: Monthly units
     type: simple
     agg: sum
-    expr: profit
-  - name: monthly_claims_paid
-    description: Sum of claims_paid by month.
-    label: Claims paid
+    expr: units_produced
+  - name: monthly_downtime_hours
+    description: Sum of downtime_hours.
+    label: Downtime hours
     type: simple
     agg: sum
-    expr: claims_paid
-- name: dim_customer_segments
-  description: Public value segments, cross-sell flags and next best action per party.
+    expr: downtime_hours
+- name: fct_machine_reliability
+  description: >-
+    Public machine reliability: OEE from production with MTBF/MTTR and cost from maintenance.
   config:
     access: public
     contract:
       enforced: true
   columns:
-  - name: customer_id
+  - name: machine_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: machine_type
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: age_years
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: equipment_id
+    data_type: varchar
+  - name: criticality
+    data_type: varchar
+  - name: units_produced
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: avg_oee
+    data_type: numeric(18,4)
+  - name: aborted_runs
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: failure_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: mean_days_between_failures
+    data_type: numeric(18,1)
+  - name: mean_hours_to_repair
+    data_type: numeric(18,2)
+  - name: maintenance_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: maintenance_cost_per_unit
+    data_type: numeric(18,4)
+  - name: is_unmaintained
+    description: No CMMS record (e.g. outsourced maintenance).
+    data_type: boolean
+    constraints:
+    - type: not_null
+- name: dim_plant_scorecards
+  description: 'Public scorecard for running plants: ranks, risk flags and tier.'
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: plant_id
     data_type: varchar
     constraints:
     - type: not_null
@@ -280,9 +287,25 @@ models:
     - not_null
     - relationships:
         arguments:
-          to: ref('dim_customer_360')
-          field: customer_id
-  - name: value_segment
+          to: ref('dim_plant_360')
+          field: plant_id
+  - name: oee_rank
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: quality_rank
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: is_oee_risk
+    data_type: boolean
+    constraints:
+    - type: not_null
+  - name: is_quality_risk
+    data_type: boolean
+    constraints:
+    - type: not_null
+  - name: scorecard_tier
     data_type: varchar
     constraints:
     - type: not_null
@@ -290,65 +313,10 @@ models:
     - accepted_values:
         arguments:
           values:
-          - private
-          - affluent
-          - mass
-  - name: is_insurance_prospect
-    data_type: boolean
-    constraints:
-    - type: not_null
-  - name: is_wealth_prospect
-    data_type: boolean
-    constraints:
-    - type: not_null
-  - name: is_credit_watch
-    data_type: boolean
-    constraints:
-    - type: not_null
-  - name: next_best_action
-    data_type: varchar
-    constraints:
-    - type: not_null
-    data_tests:
-    - accepted_values:
-        arguments:
-          values:
-          - exit_review
-          - collections_contact
-          - introduce_wealth
-          - offer_insurance
-          - retain
-- name: fct_customer_churn
-  description: >-
-    Python logistic regression. The label is dim_customer_360.has_churn; inputs are profit, domain count
-    and product holdings, not the churn flag.
-  config:
-    access: public
-  columns:
-  - name: customer_id
-    description: One prediction per dim_customer_360 row.
-    data_tests:
-    - unique
-    - not_null
-  - name: churn_probability
-    data_type: numeric(6,4)
-    data_tests:
-    - not_null
-  - name: predicted_churn
-    data_type: boolean
-    data_tests:
-    - not_null
-  - name: has_churn
-    data_type: boolean
-    data_tests:
-    - not_null
-  - name: strongest_feature
-    data_tests:
-    - not_null
-  - name: model_intercept
-    data_type: numeric(8,4)
-    data_tests:
-    - not_null
+          - gold
+          - silver
+          - bronze
+          - watchlist
 - name: time_spine_daily
   description: Day spine for the Semantic Layer, built with the platform date_spine macro.
   config:
@@ -364,49 +332,36 @@ models:
     - not_null
     granularity: day
 unit_tests:
-- name: test_next_best_action_priority
-  model: dim_customer_segments
+- name: test_scorecard_tiers
+  model: dim_plant_scorecards
   given:
-  - input: ref('dim_customer_360')
+  - input: ref('dim_plant_360')
     rows:
-    - customer_id: A
-      banking_customer_id: B1
-      insurance_customer_id: null
-      wealth_customer_id: null
-      assets_under_management: 0
-      loan_balance: 10000
-      loan_arrears: 300
-      banking_status: active
-      total_profit: 9000
-      has_churn: false
-    - customer_id: B
-      banking_customer_id: B2
-      insurance_customer_id: I2
-      wealth_customer_id: null
-      assets_under_management: 0
-      loan_balance: 20000
-      loan_arrears: 0
-      banking_status: active
-      total_profit: 9000
-      has_churn: false
-    - customer_id: C
-      banking_customer_id: B3
-      insurance_customer_id: I3
-      wealth_customer_id: W3
-      assets_under_management: 2000000
-      loan_balance: 0
-      loan_arrears: 0
-      banking_status: closed
-      total_profit: 100
-      has_churn: true
+    - plant_id: A
+      production_status: running
+      avg_oee: 0.8
+      avg_first_pass_yield: 0.95
+      failure_count: 1
+      complaint_count: 0
+    - plant_id: B
+      production_status: running
+      avg_oee: 0.5
+      avg_first_pass_yield: 0.7
+      failure_count: 20
+      complaint_count: 9
+    - plant_id: C
+      production_status: closed
+      avg_oee: 0.7
+      avg_first_pass_yield: 0.9
+      failure_count: 2
+      complaint_count: 1
   expect:
     rows:
-    - customer_id: A
-      value_segment: mass
-      next_best_action: collections_contact
-    - customer_id: B
-      value_segment: mass
-      next_best_action: introduce_wealth
-    - customer_id: C
-      value_segment: private
-      next_best_action: exit_review
+    - plant_id: A
+      oee_rank: 1
+      scorecard_tier: gold
+      is_quality_risk: false
+    - plant_id: B
+      oee_rank: 2
+      scorecard_tier: watchlist
+      is_quality_risk: true

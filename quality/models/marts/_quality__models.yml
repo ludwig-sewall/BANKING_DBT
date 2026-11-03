@@ -1,0 +1,194 @@
+version: 2
+models:
+- name: dim_quality_inspection_sites
+  description: Public QA site (one per plant).
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: inspection_site_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+    - dbt_expectations.expect_column_values_to_match_regex:
+        arguments:
+          regex: ^QS-[0-9]{2}$
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: site_name
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: site_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: iso_certified_until
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: is_certificate_expired
+    data_type: boolean
+    constraints:
+    - type: not_null
+- name: fct_quality_inspections
+  description: Public inspection fact.
+  config:
+    access: public
+    contract:
+      enforced: true
+  data_tests:
+  - dbt_utils.expression_is_true:
+      arguments:
+        expression: defective_units <= sample_units
+  columns:
+  - name: inspection_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: inspection_site_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('dim_quality_inspection_sites')
+          field: inspection_site_id
+  - name: inspection_date
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: inspection_month
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: product_line
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: inspection_type
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: inspection_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: sample_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: defective_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: critical_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: defect_rate
+    data_type: numeric(18,6)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+- name: fct_quality_defect_pareto
+  description: Public defect Pareto per site.
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: site_defect_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: inspection_site_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: defect_code
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: defect_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: defect_rank
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: defect_share
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+- name: fct_quality_site_monthly
+  description: 'Public quality KPIs per plant and month: first pass yield, ppm, complaints.'
+  config:
+    access: public
+    contract:
+      enforced: true
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per inspection_site_id, inspection_month.'
+      arguments:
+        combination_of_columns:
+        - inspection_site_id
+        - inspection_month
+  columns:
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: inspection_site_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: inspection_month
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: inspection_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: complaint_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: credit_amount
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: first_pass_yield
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: defects_ppm
+    data_type: integer
+    data_tests:
+    - platform.non_negative

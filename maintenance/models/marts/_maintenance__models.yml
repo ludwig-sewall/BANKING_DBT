@@ -1,0 +1,227 @@
+version: 2
+models:
+- name: dim_maintenance_work_centers
+  description: Public maintenance work center (one per plant).
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: work_center_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: work_center_name
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: work_center_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: technician_count
+    data_type: integer
+    constraints:
+    - type: not_null
+- name: dim_maintenance_equipment
+  description: Public equipment with MTBF, MTTR and maintenance cost.
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: equipment_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+    - dbt_expectations.expect_column_values_to_match_regex:
+        arguments:
+          regex: ^EQ-[0-9]{4}$
+  - name: work_center_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('dim_maintenance_work_centers')
+          field: work_center_id
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: machine_id
+    description: MES machine_id (machine_serial in CMMS).
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: criticality
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: install_date
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: failure_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: preventive_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: unplanned_downtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: mean_hours_to_repair
+    data_type: numeric(18,2)
+  - name: mean_days_between_failures
+    data_type: numeric(18,1)
+  - name: maintenance_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+- name: fct_maintenance_work_orders
+  description: Public work order fact (cancelled orders excluded).
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: work_order_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: equipment_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('dim_maintenance_equipment')
+          field: equipment_id
+  - name: work_order_type
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: priority
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: work_order_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: reported_at
+    data_type: timestamp
+    constraints:
+    - type: not_null
+  - name: reported_month
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: completed_at
+    data_type: timestamp
+  - name: downtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: labour_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: parts_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: labour_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+    data_tests:
+    - dbt_utils.not_constant
+  - name: hours_to_repair
+    data_type: numeric(18,2)
+    data_tests:
+    - platform.non_negative
+    - dbt_utils.accepted_range:
+        arguments:
+          min_value: 0
+          max_value: 96
+        config:
+          where: work_order_type = 'corrective'
+- name: fct_maintenance_work_center_monthly
+  description: Public maintenance load, downtime and cost per plant and month.
+  config:
+    access: public
+    contract:
+      enforced: true
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per work_center_id, reported_month.'
+      arguments:
+        combination_of_columns:
+        - work_center_id
+        - reported_month
+  columns:
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: work_center_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: reported_month
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: work_order_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: preventive_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: corrective_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: downtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: maintenance_cost
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: preventive_share
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1

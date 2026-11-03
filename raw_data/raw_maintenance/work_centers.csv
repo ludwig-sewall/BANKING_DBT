@@ -1,0 +1,10 @@
+work_center_id,plant_key,work_center_name,work_center_status,technician_count,loaded_at
+WC-01,PL-01,Gothenburg Assembly maintenance,active,12,2026-03-31 06:00:00
+WC-02,PL-02,Malmö Castings maintenance,active,5,2026-03-31 06:00:00
+WC-03,PL-03,Tampere Components maintenance,active,7,2026-03-31 06:00:00
+WC-04,PL-04,Gdańsk Fabrication maintenance,active,10,2026-03-31 06:00:00
+WC-05,PL-05,Brno Machining maintenance,active,7,2026-03-31 06:00:00
+WC-06,PL-06,Linz Precision maintenance,active,11,2026-03-31 06:00:00
+WC-07,PL-07,Porto Plastics maintenance,active,7,2026-03-31 06:00:00
+WC-08,PL-08,Turin Drives maintenance,active,3,2026-03-31 06:00:00
+WC-10,PL-10,Ghent Packaging maintenance,closed,11,2026-03-31 06:00:00

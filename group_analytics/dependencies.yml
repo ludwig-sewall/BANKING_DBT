@@ -7,7 +7,6 @@ packages:
   - local: ../platform
 
 projects:
-  - name: "BANKING_BANKING"
-  - name: "BANKING_INSURANCE"
-  - name: "BANKING_WEALTH"
-  - name: "BANKING_FINANCIALS"
+  - name: "BANKING_PRODUCTION"
+  - name: "BANKING_MAINTENANCE"
+  - name: "BANKING_QUALITY"

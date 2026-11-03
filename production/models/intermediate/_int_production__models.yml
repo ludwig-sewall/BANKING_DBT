@@ -1,0 +1,35 @@
+version: 2
+models:
+- name: int_production_runs__oee_inputs
+  description: 'Runs with the inputs for OEE: planned vs run time, ideal vs actual units, good units.'
+  columns:
+  - name: run_id
+    data_tests:
+    - unique
+    - not_null
+- name: int_production_machines__monthly
+  description: Runs rolled up to machine and month.
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per machine_id, run_month.'
+      arguments:
+        combination_of_columns:
+        - machine_id
+        - run_month
+  columns:
+  - name: machine_id
+    data_tests:
+    - not_null
+- name: int_production_plants__monthly
+  description: Machine months rolled up to plant and month.
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per production_plant_id, run_month.'
+      arguments:
+        combination_of_columns:
+        - production_plant_id
+        - run_month
+  columns:
+  - name: production_plant_id
+    data_tests:
+    - not_null

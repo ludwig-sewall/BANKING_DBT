@@ -1,0 +1,66 @@
+version: 2
+models:
+- name: int_maintenance_work_orders__costed
+  description: >-
+    Non-cancelled work orders with parts cost, labour cost (var labour_rate_per_hour, default 68) and
+    time to repair.
+  columns:
+  - name: work_order_id
+    data_tests:
+    - unique
+    - not_null
+- name: int_maintenance_equipment__reliability
+  description: Failure counts, MTTR and cost per piece of equipment.
+  columns:
+  - name: equipment_id
+    data_tests:
+    - unique
+    - not_null
+- name: int_maintenance_work_centers__monthly
+  description: Work orders per work center and month.
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per work_center_id, reported_month.'
+      arguments:
+        combination_of_columns:
+        - work_center_id
+        - reported_month
+  columns:
+  - name: work_center_id
+    data_tests:
+    - not_null
+unit_tests:
+- name: test_reliability_counts_failures_only_for_corrective
+  model: int_maintenance_equipment__reliability
+  given:
+  - input: ref('int_maintenance_work_orders__costed')
+    rows:
+    - work_order_id: W1
+      equipment_id: E
+      work_order_type: corrective
+      downtime_hours: 4
+      hours_to_repair: 6
+      parts_cost: 100
+      labour_cost: 200
+    - work_order_id: W2
+      equipment_id: E
+      work_order_type: corrective
+      downtime_hours: 2
+      hours_to_repair: 2
+      parts_cost: 0
+      labour_cost: 100
+    - work_order_id: W3
+      equipment_id: E
+      work_order_type: preventive
+      downtime_hours: 1
+      hours_to_repair: 1
+      parts_cost: 0
+      labour_cost: 50
+  expect:
+    rows:
+    - equipment_id: E
+      failure_count: 2
+      preventive_count: 1
+      unplanned_downtime_hours: 6
+      mean_hours_to_repair: 4
+      maintenance_cost: 450

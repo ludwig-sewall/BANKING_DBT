@@ -1,0 +1,40 @@
+version: 2
+sources:
+- name: maintenance
+  description: Computerised maintenance management system (RAW_MAINTENANCE).
+  schema: raw_maintenance
+  tables:
+  - name: work_centers
+    description: One row per plant maintenance team. Lyon outsources maintenance and has none.
+    config:
+      loaded_at_field: loaded_at
+      freshness:
+        warn_after:
+          count: 100000
+          period: hour
+    columns:
+    - name: work_center_id
+      data_tests:
+      - unique
+      - not_null
+  - name: equipment
+    description: Maintained equipment. machine_serial is the MES machine_id.
+    columns:
+    - name: equipment_id
+      data_tests:
+      - unique
+      - not_null
+  - name: work_orders
+    description: Preventive and corrective work orders.
+    columns:
+    - name: work_order_id
+      data_tests:
+      - unique
+      - not_null
+  - name: parts_usage
+    description: Spare parts booked against work orders.
+    columns:
+    - name: usage_id
+      data_tests:
+      - unique
+      - not_null

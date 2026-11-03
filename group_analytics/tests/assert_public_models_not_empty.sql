@@ -1,9 +1,9 @@
 {#- Templated test: add a model to the list and it is covered. -#}
 {%- set public_models = [
-    'dim_customer_360',
-    'fct_customer_monthly',
-    'dim_customer_segments',
-    'fct_customer_churn'
+    'dim_plant_360',
+    'fct_plant_monthly',
+    'fct_machine_reliability',
+    'dim_plant_scorecards'
 ] -%}
 
 {%- for model_name in public_models %}

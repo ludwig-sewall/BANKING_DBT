@@ -1,0 +1,33 @@
+version: 2
+sources:
+- name: production
+  description: 'Manufacturing execution system (RAW_PRODUCTION): plants, machines and production runs.'
+  schema: raw_production
+  tables:
+  - name: plants
+    description: One row per plant; plant_key is shared with maintenance and quality.
+    config:
+      loaded_at_field: loaded_at
+      freshness:
+        warn_after:
+          count: 100000
+          period: hour
+    columns:
+    - name: production_plant_id
+      data_tests:
+      - unique
+      - not_null
+  - name: machines
+    description: One row per machine with its rated output.
+    columns:
+    - name: machine_id
+      data_tests:
+      - unique
+      - not_null
+  - name: production_runs
+    description: One row per production run. Aborted runs stop early.
+    columns:
+    - name: run_id
+      data_tests:
+      - unique
+      - not_null

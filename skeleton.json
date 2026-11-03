@@ -1,7 +1,7 @@
 {
-  "use_case": "financial_services",
-  "title": "Financial services",
-  "repo": "op_financial_services",
+  "use_case": "manufacturing",
+  "title": "Manufacturing",
+  "repo": "op_manufacturing",
   "projects": [
     {
       "key": "platform",
@@ -9,36 +9,30 @@
       "depends_on": []
     },
     {
-      "key": "banking",
-      "subdirectory": "banking",
+      "key": "production",
+      "subdirectory": "production",
       "depends_on": []
     },
     {
-      "key": "insurance",
-      "subdirectory": "insurance",
+      "key": "maintenance",
+      "subdirectory": "maintenance",
       "depends_on": []
     },
     {
-      "key": "wealth",
-      "subdirectory": "wealth",
-      "depends_on": []
-    },
-    {
-      "key": "financials",
-      "subdirectory": "financials",
+      "key": "quality",
+      "subdirectory": "quality",
       "depends_on": []
     },
     {
       "key": "group_analytics",
       "subdirectory": "group_analytics",
       "depends_on": [
-        "banking",
-        "insurance",
-        "wealth",
-        "financials"
+        "production",
+        "maintenance",
+        "quality"
       ]
     }
   ],
   "raw_data": "raw_data",
-  "enable_pages": true
+  "enable_pages": false
 }

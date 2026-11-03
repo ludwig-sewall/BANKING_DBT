@@ -1,0 +1,364 @@
+version: 2
+models:
+- name: dim_production_plants
+  description: Public plant. Grain is one plant; plant_key is the group key.
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: production_plant_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+    - dbt_expectations.expect_column_values_to_match_regex:
+        arguments:
+          regex: ^MES-[0-9]{2}$
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_name
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: country
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: plant_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - running
+          - closed
+  - name: shifts_per_day
+    data_type: integer
+    constraints:
+    - type: not_null
+- name: dim_production_machines
+  description: Public machine with plant key and age.
+  config:
+    access: public
+    contract:
+      enforced: true
+  data_tests:
+  - dbt_expectations.expect_table_row_count_to_be_between:
+      arguments:
+        min_value: 40
+        max_value: 80
+  columns:
+  - name: machine_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+    - dbt_expectations.expect_column_values_to_match_regex:
+        arguments:
+          regex: ^M-[0-9]{3}$
+  - name: production_plant_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('dim_production_plants')
+          field: production_plant_id
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: machine_type
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: machine_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: commissioned_date
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: rated_units_per_hour
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: age_years
+    data_type: integer
+    constraints:
+    - type: not_null
+- name: fct_production_runs
+  description: Public production run fact.
+  config:
+    access: public
+    contract:
+      enforced: true
+  data_tests:
+  - dbt_utils.expression_is_true:
+      arguments:
+        expression: good_units = units_produced - scrap_units
+  - dbt_utils.expression_is_true:
+      description: Run time cannot exceed the planned hours.
+      arguments:
+        expression: runtime_hours <= planned_hours
+  - dbt_utils.expression_is_true:
+      description: 'Data quality threshold: some aborted runs are normal (warn); a spike fails the build.'
+      config:
+        severity: error
+        warn_if: '>100'
+        error_if: '>400'
+      arguments:
+        expression: run_status != 'aborted'
+  columns:
+  - name: run_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: machine_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('dim_production_machines')
+          field: machine_id
+  - name: production_plant_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: run_date
+    data_type: date
+    constraints:
+    - type: not_null
+    data_tests:
+    - platform.not_after_as_of
+  - name: product_line
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: run_status
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: planned_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: runtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: units_produced
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: scrap_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: good_units
+    data_type: integer
+    constraints:
+    - type: not_null
+    data_tests:
+    - platform.non_negative
+  - name: scrap_rate
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+- name: fct_production_machine_monthly
+  description: Public machine OEE by month (availability x performance x quality).
+  config:
+    access: public
+    contract:
+      enforced: true
+  columns:
+  - name: machine_month_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - unique
+    - not_null
+  - name: machine_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('dim_production_machines')
+          field: machine_id
+  - name: production_plant_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: run_month
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: run_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: aborted_runs
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: planned_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: runtime_hours
+    data_type: numeric(18,2)
+    constraints:
+    - type: not_null
+  - name: units_produced
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: good_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: availability
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: performance
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1.05
+  - name: quality
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: oee
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+- name: fct_production_plant_monthly
+  description: Public plant output, scrap and OEE by month.
+  config:
+    access: public
+    contract:
+      enforced: true
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per production_plant_id, run_month.'
+      arguments:
+        combination_of_columns:
+        - production_plant_id
+        - run_month
+  columns:
+  - name: plant_key
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: production_plant_id
+    data_type: varchar
+    constraints:
+    - type: not_null
+  - name: run_month
+    data_type: date
+    constraints:
+    - type: not_null
+  - name: machines_running
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: run_count
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: aborted_runs
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: units_produced
+    data_type: integer
+    constraints:
+    - type: not_null
+    data_tests:
+    - platform.sums_match:
+        arguments:
+          compare_model: ref('fct_production_runs')
+          compare_column: units_produced
+  - name: scrap_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: good_units
+    data_type: integer
+    constraints:
+    - type: not_null
+  - name: scrap_rate
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+  - name: oee
+    data_type: numeric(18,4)
+    data_tests:
+    - platform.in_range:
+        arguments:
+          min_value: 0
+          max_value: 1
+unit_tests:
+- name: test_oee_is_availability_times_performance_times_quality
+  given:
+  - input: ref('int_production_machines__monthly')
+    rows:
+    - machine_id: M
+      production_plant_id: P
+      run_month: '2026-03-01'
+      run_count: 2
+      aborted_runs: 0
+      planned_hours: 40
+      runtime_hours: 36
+      units_produced: 900
+      good_units: 855
+      ideal_units: 1000
+  expect:
+    rows:
+    - machine_id: M
+      availability: 0.9
+      performance: 0.9
+      quality: 0.95
+      oee: 0.7695
+  model: fct_production_machine_monthly

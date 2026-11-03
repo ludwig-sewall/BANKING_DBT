@@ -1,0 +1,71 @@
+version: 2
+models:
+- name: int_quality_inspections__with_defects
+  description: Inspections with recorded defect units and critical units.
+  columns:
+  - name: inspection_id
+    data_tests:
+    - unique
+    - not_null
+- name: int_quality_defects__pareto
+  description: Defect units by code per site, ranked (Pareto).
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per inspection_site_id, defect_code.'
+      arguments:
+        combination_of_columns:
+        - inspection_site_id
+        - defect_code
+  columns:
+  - name: inspection_site_id
+    data_tests:
+    - not_null
+- name: int_quality_sites__monthly
+  description: Inspections and complaints per site and month.
+  data_tests:
+  - dbt_utils.unique_combination_of_columns:
+      description: 'Grain: one row per inspection_site_id, inspection_month.'
+      arguments:
+        combination_of_columns:
+        - inspection_site_id
+        - inspection_month
+  columns:
+  - name: inspection_site_id
+    data_tests:
+    - not_null
+unit_tests:
+- name: test_pareto_rank_and_share
+  given:
+  - input: ref('stg_quality__defects')
+    rows:
+    - defect_id: D1
+      inspection_id: I1
+      defect_code: surface
+      defect_units: 6
+    - defect_id: D2
+      inspection_id: I1
+      defect_code: dimension
+      defect_units: 3
+    - defect_id: D3
+      inspection_id: I2
+      defect_code: surface
+      defect_units: 1
+  - input: ref('stg_quality__inspections')
+    rows:
+    - inspection_id: I1
+      inspection_site_id: S
+    - inspection_id: I2
+      inspection_site_id: S
+  expect:
+    rows:
+    - inspection_site_id: S
+      defect_code: surface
+      defect_units: 7
+      defect_rank: 1
+      defect_share: 0.7
+    - inspection_site_id: S
+      defect_code: dimension
+      defect_units: 3
+      defect_rank: 2
+      defect_share: 0.3
+  model: int_quality_defects__pareto

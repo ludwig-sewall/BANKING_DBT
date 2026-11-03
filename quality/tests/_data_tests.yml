@@ -1,0 +1,6 @@
+version: 2
+data_tests:
+- name: assert_recorded_defects_match_inspection
+  description: Defect rows must add up to the defective units on the inspection.
+- name: assert_public_models_not_empty
+  description: 'Templated with a Jinja loop: fails for any public model in this project that is empty.'

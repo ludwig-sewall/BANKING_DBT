@@ -1,0 +1,81 @@
+version: 2
+models:
+- name: stg_production__plants
+  description: >-
+    One row per plant; plant_key is shared with maintenance and quality. Renamed, typed and decoded; one
+    row per source row.
+  columns:
+  - name: production_plant_id
+    description: MES plant key.
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_key
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_name
+  - name: country
+  - name: plant_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - running
+          - closed
+  - name: shifts_per_day
+  - name: loaded_at
+- name: stg_production__machines
+  description: >-
+    One row per machine with its rated output. Renamed, typed and decoded; one row per source row.
+  columns:
+  - name: machine_id
+    data_tests:
+    - unique
+    - not_null
+  - name: production_plant_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_production__plants')
+          field: production_plant_id
+  - name: machine_type
+  - name: commissioned_date
+  - name: machine_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - active
+          - retired
+  - name: rated_units_per_hour
+- name: stg_production__production_runs
+  description: >-
+    One row per production run. Aborted runs stop early. Renamed, typed and decoded; one row per source
+    row.
+  columns:
+  - name: run_id
+    data_tests:
+    - unique
+    - not_null
+  - name: machine_id
+    data_tests:
+    - not_null
+  - name: run_date
+  - name: product_line
+  - name: run_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - completed
+          - aborted
+  - name: planned_hours
+  - name: runtime_hours
+  - name: planned_units
+  - name: units_produced
+    data_tests:
+    - platform.non_negative
+  - name: scrap_units
+    data_tests:
+    - platform.non_negative

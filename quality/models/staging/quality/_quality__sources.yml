@@ -1,0 +1,41 @@
+version: 2
+sources:
+- name: quality
+  description: >-
+    Quality management system (RAW_QUALITY): sites, inspections, defects and customer complaints.
+  schema: raw_quality
+  tables:
+  - name: inspection_sites
+    description: One QA site per plant.
+    config:
+      loaded_at_field: loaded_at
+      freshness:
+        warn_after:
+          count: 100000
+          period: hour
+    columns:
+    - name: inspection_site_id
+      data_tests:
+      - unique
+      - not_null
+  - name: inspections
+    description: Sampled inspections; pending ones are from the last two days.
+    columns:
+    - name: inspection_id
+      data_tests:
+      - unique
+      - not_null
+  - name: defects
+    description: Defects found during inspections, by code and severity.
+    columns:
+    - name: defect_id
+      data_tests:
+      - unique
+      - not_null
+  - name: complaints
+    description: Customer complaints traced back to a site.
+    columns:
+    - name: complaint_id
+      data_tests:
+      - unique
+      - not_null

@@ -1,0 +1,103 @@
+version: 2
+models:
+- name: stg_maintenance__work_centers
+  description: >-
+    One row per plant maintenance team. Lyon outsources maintenance and has none. Renamed, typed and decoded;
+    one row per source row.
+  columns:
+  - name: work_center_id
+    data_tests:
+    - unique
+    - not_null
+  - name: plant_key
+    data_tests:
+    - unique
+    - not_null
+  - name: work_center_name
+  - name: work_center_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - active
+          - closed
+  - name: technician_count
+  - name: loaded_at
+- name: stg_maintenance__equipment
+  description: >-
+    Maintained equipment. machine_serial is the MES machine_id. Renamed, typed and decoded; one row per
+    source row.
+  columns:
+  - name: equipment_id
+    data_tests:
+    - unique
+    - not_null
+  - name: work_center_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_maintenance__work_centers')
+          field: work_center_id
+  - name: machine_serial
+    data_tests:
+    - unique
+    - not_null
+  - name: criticality
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - A
+          - B
+          - C
+  - name: install_date
+- name: stg_maintenance__work_orders
+  description: >-
+    Preventive and corrective work orders. Renamed, typed and decoded; one row per source row.
+  columns:
+  - name: work_order_id
+    data_tests:
+    - unique
+    - not_null
+  - name: equipment_id
+    data_tests:
+    - not_null
+  - name: work_order_type
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - preventive
+          - corrective
+  - name: priority
+  - name: reported_at
+  - name: started_at
+  - name: completed_at
+  - name: work_order_status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - closed
+          - open
+          - cancelled
+  - name: downtime_hours
+    data_tests:
+    - platform.non_negative
+  - name: labour_hours
+    data_tests:
+    - platform.non_negative
+- name: stg_maintenance__parts_usage
+  description: >-
+    Spare parts booked against work orders. Renamed, typed and decoded; one row per source row.
+  columns:
+  - name: usage_id
+    data_tests:
+    - unique
+    - not_null
+  - name: work_order_id
+    data_tests:
+    - not_null
+  - name: part_number
+  - name: quantity
+  - name: unit_cost

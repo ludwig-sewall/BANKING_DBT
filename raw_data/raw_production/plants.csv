@@ -1,0 +1,11 @@
+production_plant_id,plant_key,plant_name,country,plant_status,shifts_per_day,loaded_at
+MES-01,PL-01,Gothenburg Assembly,SE,running,2,2026-03-31 06:00:00
+MES-02,PL-02,Malmö Castings,SE,running,2,2026-03-31 06:00:00
+MES-03,PL-03,Tampere Components,FI,running,2,2026-03-31 06:00:00
+MES-04,PL-04,Gdańsk Fabrication,PL,running,3,2026-03-31 06:00:00
+MES-05,PL-05,Brno Machining,CZ,running,2,2026-03-31 06:00:00
+MES-06,PL-06,Linz Precision,AT,running,2,2026-03-31 06:00:00
+MES-07,PL-07,Porto Plastics,PT,running,2,2026-03-31 06:00:00
+MES-08,PL-08,Turin Drives,IT,running,2,2026-03-31 06:00:00
+MES-09,PL-09,Lyon Electronics,FR,running,2,2026-03-31 06:00:00
+MES-10,PL-10,Ghent Packaging,BE,closed,2,2026-03-31 06:00:00
